@@ -15,12 +15,29 @@ window.onload = function () {
 
   const keys = {};
 
+  // Load Images
   const foxImage = new Image();
   foxImage.src = "assets/sprites/fox.png";
 
   const rabbitImage = new Image();
   rabbitImage.src = "assets/sprites/rabbit.png";
 
+  // Animation Variables
+  let currentFrame = 0;
+  let frameTimer = 0;
+  let frameInterval = 150;
+  let direction = "idle";
+
+  let rabbitFrame = 0;
+  let rabbitTimer = 0;
+
+  let nearRabbit = false;
+  let heartScale = 0;
+  let heartPulse = 0;
+
+  let lastTime = 0;
+
+  // Keyboard Events
   document.addEventListener("keydown", e => {
     keys[e.key] = true;
 
@@ -33,18 +50,69 @@ window.onload = function () {
     keys[e.key] = false;
   });
 
-function update(deltaTime) {
+  function update(deltaTime) {
+
     if (gameState === "explore") {
-      if (keys["ArrowLeft"]) player.x -= player.speed;
-      if (keys["ArrowRight"]) player.x += player.speed;
+
+      let moving = false;
+
+      if (keys["ArrowLeft"]) {
+        player.x -= player.speed;
+        direction = "left";
+        moving = true;
+      }
+
+      if (keys["ArrowRight"]) {
+        player.x += player.speed;
+        direction = "right";
+        moving = true;
+      }
+
+      if (!moving) {
+        direction = "idle";
+      }
 
       if (player.x < 0) player.x = 0;
       if (player.x + player.width > canvas.width)
         player.x = canvas.width - player.width;
+
+      // Fox animation
+      if (moving) {
+        frameTimer += deltaTime;
+        if (frameTimer > frameInterval) {
+          currentFrame = (currentFrame + 1) % 3;
+          frameTimer = 0;
+        }
+      } else {
+        currentFrame = 0;
+      }
+
+      // Rabbit idle animation
+      rabbitTimer += deltaTime;
+      if (rabbitTimer > 300) {
+        rabbitFrame = (rabbitFrame + 1) % 3;
+        rabbitTimer = 0;
+      }
+
+      // Distance detection
+      let dx = player.x - 700;
+      let dy = player.y - 380;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+
+      nearRabbit = distance < 50;
+
+      // Heart animation
+      if (nearRabbit) {
+        heartPulse += deltaTime * 0.005;
+        heartScale = 1 + Math.sin(heartPulse) * 0.2;
+      } else {
+        heartScale = 0;
+      }
     }
   }
 
   function draw() {
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (gameState === "intro") {
@@ -53,73 +121,73 @@ function update(deltaTime) {
       ctx.fillText("The Trail of Wild Roses", 250, 200);
       ctx.fillText("Press Enter", 360, 250);
     }
-if (gameState === "explore") {
 
-  // Background
-  ctx.fillStyle = "#1c1c1c";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (gameState === "explore") {
 
-  // --- FOX ---
-  let row = 0;
+      // Background
+      ctx.fillStyle = "#1c1c1c";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (direction === "right") row = 1;
-  if (direction === "left") row = 2;
-  if (direction === "idle") row = 0;
+      // FOX
+      let row = 0;
+      if (direction === "right") row = 1;
+      if (direction === "left") row = 2;
 
-  ctx.drawImage(
-    foxImage,
-    currentFrame * 48,
-    row * 48,
-    48,
-    48,
-    player.x,
-    player.y,
-    48,
-    48
-  );
+      ctx.drawImage(
+        foxImage,
+        currentFrame * 48,
+        row * 48,
+        48,
+        48,
+        player.x,
+        player.y,
+        48,
+        48
+      );
 
-  // --- RABBIT ---
-  ctx.drawImage(
-    rabbitImage,
-    rabbitFrame * 48,
-    0,
-    48,
-    48,
-    700,
-    380,
-    48,
-    48
-  );
+      // RABBIT
+      ctx.drawImage(
+        rabbitImage,
+        rabbitFrame * 48,
+        0,
+        48,
+        48,
+        700,
+        380,
+        48,
+        48
+      );
 
-  // --- HEART ---
-  if (nearRabbit) {
+      // HEART
+      if (nearRabbit) {
 
-    ctx.save();
+        ctx.save();
+        ctx.translate(724, 350);
+        ctx.scale(heartScale, heartScale);
 
-    ctx.translate(724, 350);
-    ctx.scale(heartScale, heartScale);
+        ctx.fillStyle = "pink";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-10, -10, -20, 10, 0, 20);
+        ctx.bezierCurveTo(20, 10, 10, -10, 0, 0);
+        ctx.fill();
 
-    ctx.fillStyle = "pink";
-
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.bezierCurveTo(-10, -10, -20, 10, 0, 20);
-    ctx.bezierCurveTo(20, 10, 10, -10, 0, 0);
-    ctx.fill();
-
-    ctx.restore();
+        ctx.restore();
+      }
+    }
   }
-}
-    
-function gameLoop(timestamp) {
 
-  let deltaTime = timestamp - lastTime;
-  lastTime = timestamp;
+  function gameLoop(timestamp) {
 
-  update(deltaTime);
-  draw();
+    let deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
 
-  requestAnimationFrame(gameLoop);
-}
+    update(deltaTime);
+    draw();
 
-gameLoop(0);
+    requestAnimationFrame(gameLoop);
+  }
+
+  gameLoop(0);
+
+};
