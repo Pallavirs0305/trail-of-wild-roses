@@ -7,9 +7,9 @@ window.onload = function () {
 
   const player = {
     x: 100,
-    y: 380,
-    width: 48,
-    height: 48,
+    y: 350,
+    width: 120,
+    height: 120,
     speed: 4
   };
 
@@ -21,15 +21,6 @@ window.onload = function () {
 
   const rabbitImage = new Image();
   rabbitImage.src = "assets/sprites/rabbit.png";
-
-  // Animation
-  let currentFrame = 0;
-  let frameTimer = 0;
-  let frameInterval = 150;
-  let direction = "idle";
-
-  let rabbitFrame = 0;
-  let rabbitTimer = 0;
 
   let lastTime = 0;
 
@@ -64,45 +55,15 @@ window.onload = function () {
 
     if (gameState === "explore") {
 
-      let moving = false;
-
-      if (keys["ArrowLeft"]) {
-        player.x -= player.speed;
-        direction = "left";
-        moving = true;
-      }
-
-      if (keys["ArrowRight"]) {
-        player.x += player.speed;
-        direction = "right";
-        moving = true;
-      }
-
-      if (!moving) direction = "idle";
+      // Movement
+      if (keys["ArrowLeft"]) player.x -= player.speed;
+      if (keys["ArrowRight"]) player.x += player.speed;
 
       if (player.x < 0) player.x = 0;
       if (player.x + player.width > canvas.width)
         player.x = canvas.width - player.width;
 
-      // Fox animation
-      if (moving) {
-        frameTimer += deltaTime;
-        if (frameTimer > frameInterval) {
-          currentFrame = (currentFrame + 1) % 3;
-          frameTimer = 0;
-        }
-      } else {
-        currentFrame = 0;
-      }
-
-      // Rabbit animation
-      rabbitTimer += deltaTime;
-      if (rabbitTimer > 300) {
-        rabbitFrame = (rabbitFrame + 1) % 3;
-        rabbitTimer = 0;
-      }
-
-      // Rose glow
+      // Rose glow animation
       roseGlow += deltaTime * 0.005;
 
       // Rose collision
@@ -112,7 +73,7 @@ window.onload = function () {
         let dy = player.y - rose.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (!rose.collected && distance < 40) {
+        if (!rose.collected && distance < 60) {
           rose.collected = true;
           heartMeter += 25;
         }
@@ -121,10 +82,10 @@ window.onload = function () {
 
       // Rabbit proximity
       let dxRabbit = player.x - 700;
-      let dyRabbit = player.y - 380;
+      let dyRabbit = player.y - 350;
       let distRabbit = Math.sqrt(dxRabbit * dxRabbit + dyRabbit * dyRabbit);
 
-      nearRabbit = distRabbit < 50;
+      nearRabbit = distRabbit < 80;
 
       if (nearRabbit) {
         heartPulse += deltaTime * 0.005;
@@ -180,41 +141,29 @@ window.onload = function () {
 
       });
 
-      // Fox
-      let row = 0;
-      if (direction === "right") row = 1;
-      if (direction === "left") row = 2;
-
+      // Fox (FULL IMAGE, NO SLICING)
       ctx.drawImage(
         foxImage,
-        currentFrame * 48,
-        row * 48,
-        48,
-        48,
         player.x,
         player.y,
-        48,
-        48
+        player.width,
+        player.height
       );
 
-      // Rabbit
+      // Rabbit (FULL IMAGE, NO SLICING)
       ctx.drawImage(
         rabbitImage,
-        rabbitFrame * 48,
-        0,
-        48,
-        48,
         700,
-        380,
-        48,
-        48
+        350,
+        120,
+        120
       );
 
       // Heart above rabbit
       if (nearRabbit) {
 
         ctx.save();
-        ctx.translate(724, 350);
+        ctx.translate(760, 320);
         ctx.scale(heartScale, heartScale);
 
         ctx.fillStyle = "pink";
@@ -226,7 +175,6 @@ window.onload = function () {
 
         ctx.restore();
       }
-
     }
   }
 
